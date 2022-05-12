@@ -21,7 +21,7 @@ def stack_image(scale, img_array):
                     img_array[x][y] = cv.cvtColor(
                         img_array[x][y], cv.COLOR_GRAY2BGR)
         image_blank = np.zeros((height, width, 3), dtype='uint8')
-        hor = [image_blank]*rows
+        hor = [image_blank] * rows
         for x in range(0, rows):
             hor[x] = np.hstack(img_array[x])
         ver = np.vstack(hor)
@@ -43,15 +43,16 @@ def stack_image(scale, img_array):
 def get_contours(img):
     contours, hierarchy = cv.findContours(
         img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    print("Number of objects: " + str(len(contours)))
     for cnt in contours:
         area = cv.contourArea(cnt)
         print(area)
         # this condition to remove noises
         if area > 500:
             cv.drawContours(img_contour, cnt, -1, (255, 0, 0), 3)
-            peri = cv.arcLength(cnt, True) # arc len of contours
+            peri = cv.arcLength(cnt, True)  # arc len of contours
             # print(peri)
-            approx = cv.approxPolyDP(cnt, 0.02*peri, True) # approx how many corner points
+            approx = cv.approxPolyDP(cnt, 0.02 * peri, True)  # approx how many corner points
             print(len(approx))
             obj_cor = len(approx)
             x, y, w, h = cv.boundingRect(approx)
@@ -59,7 +60,7 @@ def get_contours(img):
             if obj_cor == 3:
                 object_type = "Triangle"
             elif obj_cor == 4:
-                aps_ratio = w/float(h)
+                aps_ratio = w / float(h)
                 if aps_ratio > 0.98 and aps_ratio < 1.03:
                     object_type = "Square"
                 else:
@@ -69,21 +70,26 @@ def get_contours(img):
             else:
                 object_type = "None"
 
-            cv.rectangle(img_contour, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            cv.putText(img_contour, object_type,
-                       (x+(w//2)-10, y+(h//2)-10), cv.FONT_HERSHEY_COMPLEX, 0.7,
+            cv.rectangle(opening, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv.putText(opening, object_type,
+                       (x + (w // 2) - 10, y + (h // 2) - 10), cv.FONT_HERSHEY_COMPLEX, 0.7,
                        (0, 0, 0), 2)
 
 
-img = cv.imread('Photos/shape.jpg')
+img = cv.imread('Photos/Rice/1_wIXlvBeAFtNVgJd49VObgQ.png')
 cv.imshow('Original Image', img)
-img_contour = img.copy()
+# img_contour = img.copy()
 gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-blur = cv.GaussianBlur(gray, (7, 7), 1) # the higher the sigma is, the more blur we have
-canny = cv.Canny(blur, 50, 50)
-get_contours(canny)
+blur = cv.GaussianBlur(gray, (5, 5), 0)  # the higher the sigma is, the more blur we have
+_, thresh = cv.threshold(blur, 120, 255, cv.THRESH_BINARY)
+
+# Apply opening to remove small objects
+kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))  # rectangular structuring element
+opening = cv.morphologyEx(thresh, cv.MORPH_OPEN, kernel)
+img_contour = opening.copy()
+get_contours(opening)
 blank = np.zeros(img.shape[:2], dtype='uint8')
-img_stack = stack_image(0.8, ([img, gray, blur], [canny, img_contour, blank]))
+img_stack = stack_image(0.8, ([img, gray, blur], [opening, img_contour, blank]))
 cv.imshow('Stack', img_stack)
 
 cv.waitKey(0)
