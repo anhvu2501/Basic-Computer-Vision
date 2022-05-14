@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-img = cv.imread('Photos/b.jpg')
+img = cv.imread('Photos/Uppsala Sunset.jpg')
 cv.imshow('Original Image', img)
 
 # blank need to be had the same size with the original image
